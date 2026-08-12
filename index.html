@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎰 BINGO DEL BARRIO — EN VIVO</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+        body { background: #1a472a; color: white; text-align: center; padding: 15px; min-height: 100vh; }
+        h1 { font-size: 1.8rem; margin-bottom: 8px; color: #ffd700; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+        .conectado { color: #90ee90; font-size: 0.85rem; margin-bottom: 8px; }
+        .regla { font-size: 0.9rem; margin-bottom: 10px; color: #c8ffc8; }
+        .etapa { font-size: 1.3rem; color: #ffd700; font-weight: bold; margin-bottom: 10px; }
+        .numero-grande { font-size: 5rem; font-weight: bold; color: #ffd700; margin: 10px 0; text-shadow: 3px 3px 6px rgba(0,0,0,0.6); }
+        button { padding: 12px 20px; font-size: 1rem; border: none; border-radius: 8px; cursor: pointer; margin: 6px; font-weight: bold; transition: 0.2s; }
+        button:disabled { background: #3a3a3a; color: #777; cursor: not-allowed; transform: none; }
+        .sacar { background: #ffd700; color: #1a472a; font-size: 1.1rem; padding: 14px 28px; }
+        .sacar:hover:not(:disabled) { background: #fff8b0; transform: scale(1.05); }
+        .siguiente { background: #4CAF50; color: white; }
+        .siguiente:hover:not(:disabled) { background: #66bb6a; transform: scale(1.05); }
+        .generar { background: #2196F3; color: white; }
+        .generar:hover:not(:disabled) { background: #64b5f6; transform: scale(1.05); }
+        .nuevo { background: #e63946; color: white; }
+        .nuevo:hover:not(:disabled) { background: #ff5c68; transform: scale(1.05); }
+        .caja-salidos { margin: 15px auto; max-width: 650px; }
+        h2 { font-size: 1rem; margin-bottom: 6px; color: #90ee90; margin-top: 15px; }
+        .numeros-salidos { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; margin-top: 6px; }
+        .salido { background: #2e7d32; padding: 5px 9px; border-radius: 5px; font-size: 0.95rem; font-weight: bold; min-width: 34px; }
+        .seccion { margin-top: 18px; padding-top: 12px; border-top: 2px dashed #4a7c59; }
+        .contenedor-cartones { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 12px; }
+        .carton { background: white; color: #1a472a; border: 3px solid #ffd700; border-radius: 10px; padding: 12px; width: 230px; transition: 0.3s; }
+        .carton.ganador { border-color: #ff4444; box-shadow: 0 0 18px #ff4444; }
+        .carton h3 { font-size: 1rem; margin-bottom: 10px; color: #1a472a; border-bottom: 2px solid #ddd; padding-bottom: 6px; }
+        .fila { display: flex; justify-content: center; gap: 4px; margin: 5px 0; }
+        .fila.activa { outline: 3px solid #ffd700; outline-offset: 3px; border-radius: 5px; }
+        .casilla { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 1px solid #999; border-radius: 4px; font-weight: bold; background: #f9f9f9; transition: 0.2s; font-size: 0.95rem; }
+        .casilla.tachada { background: #4CAF50; color: white; text-decoration: line-through; }
+        .fila.completa { background: #c8ffc8; border-radius: 4px; }
+        .cantidad { padding: 10px; font-size: 1rem; margin: 10px 0; }
+        input { width: 60px; padding: 8px; font-size: 1.1rem; border-radius: 5px; border: none; text-align: center; margin: 0 8px; }
+        .aviso { margin-top: 12px; font-weight: bold; color: #ffd700; min-height: 30px; font-size: 1.3rem; }
+        .clave { margin-top: 15px; padding: 12px; background: rgba(0,0,0,0.25); border-radius: 10px; }
+        .clave input { width: 200px; padding: 10px; font-size: 1rem; border-radius: 5px; border: none; }
+        .oculto { display: none !important; }
+        .instruccion { font-size: 0.8rem; color: #aaa; margin-top: 8px; }
+    </style>
+</head>
+<body>
+    <h1>🎰 BINGO DEL BARRIO — EN VIVO 🎰</h1>
+    <p class="conectado">🔴 Se actualiza solo para todos</p>
+    <p class="regla">Se juega fila por fila. Cada fila empieza de cero.</p>
+    <div class="etapa" id="etapa">PRIMERA FILA — Jugando</div>
+    <div class="numero-grande" id="numeroGrande">—</div>
+    <div class="aviso" id="aviso"></div>
+
+    <div id="pantallaClave" class="clave">
+        <h3>🔐 Solo el encargado ingresa acá:</h3>
+        <input type="password" id="entradaClave" placeholder="Clave: bingo123">
+        <br>
+        <button onclick="verificarClave()">✅ ENTRAR COMO ENCARGADO</button>
+        <p class="instruccion">Los demás no tocan nada, se actualiza solo</p>
+    </div>
+
+    <div id="zonaMandos" class="oculto">
+        <div class="cantidad">¿Cuántos cartones? <input type="number" id="cuantos" min="1" max="50" value="5"></div>
+        <button class="generar" id="botonGenerar" onclick="generarCartones()">✨ 1. GENERAR CARTONES</button>
+        <br>
+        <button class="sacar" id="botonSacar" onclick="sacarNumero()" disabled>🎲 2. SACAR NÚMERO</button>
+        <br>
+        <button class="siguiente" id="botonSiguiente" onclick="siguienteFila()" disabled>➡️ PASAR A LA SIGUIENTE FILA</button>
+        <button class="nuevo" id="botonNuevo" onclick="juegoNuevo()" disabled>🔄 JUEGO NUEVO COMPLETO</button>
+    </div>
+
+    <div class="caja-salidos">
+        <h2>📋 Números salidos en ESTA fila:</h2>
+        <div class="numeros-salidos" id="listaSalidos"></div>
+    </div>
+
+    <div class="seccion">
+        <h2>🎯 TUS CARTONES:</h2>
+        <div class="contenedor-cartones" id="cajaCartones"></div>
+    </div>
+
+<script>
+const CLAVE_MAESTRA = 'bingo123';
+const nombresFila = ['PRIMERA FILA','SEGUNDA FILA','TERCERA FILA','CUARTA FILA','QUINTA FILA — ¡BINGO FINAL!'];
+const CODIGO_SALA = 'barrio_bingo_001';
+
+let esOrganizador = false;
+let estadoActual = null;
+
+function verificarClave() {
+    if(document.getElementById('entradaClave').value === CLAVE_MAESTRA) {
+        esOrganizador = true;
+        document.getElementById('pantallaClave').classList.add('oculto');
+        document.getElementById('zonaMandos').classList.remove('oculto');
+    } else alert('Clave equivocada. Solo mirás.');
+}
+
+async function guardarEstado(estado) {
+    localStorage.setItem(CODIGO_SALA, JSON.stringify(estado));
+    actualizarTodoEnPantalla(estado);
+}
+
+setInterval(() => {
+    const datos = localStorage.getItem(CODIGO_SALA);
+    if(!datos) return;
+    const ultimo = datos;
+    if(window.ultimoDatoConocido && window.ultimoDatoConocido === ultimo) return;
+    window.ultimoDatoConocido = ultimo;
+    estadoActual = JSON.parse(datos);
+    actualizarTodoEnPantalla(estadoActual);
+}, 1200);
+
+function actualizarTodoEnPantalla(e) {
+    if(!e || !e.cartones || e.cartones.length === 0) return;
+    document.getElementById('etapa').textContent = nombresFila[e.filaActual] + ' — Jugando';
+    document.getElementById('numeroGrande').textContent = e.ultimoNumero !== null ? String(e.ultimoNumero).padStart(2,'0') : '—';
+    document.getElementById('aviso').textContent = e.mensaje || '';
+    document.getElementById('listaSalidos').innerHTML = e.numerosSalidos.sort((a,b)=>a-b).map(n=><span class="salido">${String(n).padStart(2,'0')}</span>).join('');
+    dibujarCartones(e.cartones, e.numerosSalidos, e.filaActual, e.ganadorEn);
+    if(esOrganizador) {
+        document.getElementById('botonSacar').disabled = e.hayGanador;
+        document.getElementById('botonSiguiente').disabled = !e.hayGanador;
+        document.getElementById('botonGenerar').disabled = e.cartones.length > 0;
+        document.getElementById('botonNuevo').disabled = e.filaActual < 5;
+    }
+}
+
+function dibujarCartones(listaCartones, numerosSalidos, filaActiva, ganadorIndice) {
+    const caja = document.getElementById('cajaCartones');
+    caja.innerHTML = '';
+    listaCartones.forEach((carton, indice) => {
+        const div = document.createElement('div');
+        div.className = 'carton' + (ganadorIndice === indice ? ' ganador' : '');
+        div.innerHTML = <h3>Cartón N°${indice+1}</h3>;
+        carton.forEach((fila, filaNumero) => {
+            const filaActivaClase = filaNumero === filaActiva ? 'activa' : '';
+            const filaCompleta = ganadorIndice === indice && filaNumero === filaActiva ? 'completa' : '';
+            div.innerHTML += <div class="fila ${filaActivaClase} ${filaCompleta}">;
+            fila.forEach(numero => {
+                const tachado = numerosSalidos.includes(numero) ? 'tachada' : '';
+                div.innerHTML += <div class="casilla ${tachado}">${String(numero).padStart(2,'0')}</div>;
+            });
+            div.innerHTML += </div>;
+        });
+        caja.appendChild(div);
+    });
+}
+
+function generarUnCarton() {
+    const filas = [], usados = new Set();
+    for(let f=0; f<5; f++){
+        const fila = [];
+        while(fila.length < 5){
+            const n = Math.floor(Math.random() * 100);
+            if(!usados.has(n)) { usados.add(n); fila.push(n); }
+        }
+        fila.sort((a,b) => a - b);
+        filas.push(fila);
+    }
+    return filas;
+}
+
+async function generarCartones() {
+    if(!esOrganizador) return;
+    const cantidad = parseInt(document.getElementById('cuantos').value);
+    const cartonesGenerados = [];
+    const vistos = new Set();
+    for(let i=0; i<cantidad; i++){
+        let carton, texto;
+        do { carton = generarUnCarton(); texto = carton.flat().join(','); } while(vistos.has(texto));
+        vistos.add(texto); cartonesGenerados.push(carton);
+    }
+    const estadoInicial = {
+        cartones: cartonesGenerados, numerosSalidos: [], todosNumerosFila: Array.from({length:100}, (_,i) => i),
+        filaActual: 0, ultimoNumero: null, hayGanador: false, ganadorEn: null, mensaje: ''
+    };
+    await guardarEstado(estadoInicial);
+}
+
+async function sacarNumero() {
+    if(!esOrganizador || !estadoActual || estadoActual.hayGanador) return;
+    const indiceAleatorio = Math.floor(Math.random() * estadoActual.todosNumerosFila.length);
+    const numeroQueSale = estadoActual.todosNumerosFila.splice(indiceAleatorio, 1)[0];
+    estadoActual.numerosSalidos.push(numeroQueSale);
+    estadoActual.ultimoNumero = numeroQueSale;
+    estadoActual.cartones.forEach((carton, indiceCarton) => {
+        const filaEnJuego = carton[estadoActual.filaActual];
+        const aciertos = filaEnJuego.filter(num => estadoActual.numerosSalidos.includes(num)).length;
+        if(aciertos === 5 && !estadoActual.hayGanador) {
+            estadoActual.hayGanador = true;
+            estadoActual.ganadorEn = indiceCarton;
+            estadoActual.mensaje = estadoActual.filaActual === 4 ? 🏆 ¡BINGO FINAL! GANA EL CARTÓN N°${indiceCarton+1} 🏆 : 🎉 ¡BINGO EN ESTA FILA! GANA EL CARTÓN N°${indiceCarton+1} 🎉;
+        }
+    });
+    await guardarEstado(estadoActual);
+}
+
+async function siguienteFila() {
+    if(!esOrganizador || !estadoActual) return;
+    estadoActual.filaActual++;
+    if(estadoActual.filaActual >= 5) {
+        estadoActual.mensaje = '🏆 SE TERMINÓ TODO EL JUEGO 🏆';
+        await guardarEstado(estadoActual);
+        return;
+    }
+    estadoActual.numerosSalidos = [];
+    estadoActual.todosNumerosFila = Array.from({length:100}, (_,i) => i);
+    estadoActual.ultimoNumero = null;
+    estadoActual.hayGanador = false;
+    estadoActual.ganadorEn = null;
+    estadoActual.mensaje = '';
+    await guardarEstado(estadoActual);
+}
+
+async function juegoNuevo() {
+    if(!esOrganizador) return;
+    await guardarEstado({
+        cartones: [], numerosSalidos: [], todosNumerosFila: Array.from({length:100}, (_,i) => i),
+        filaActual: 0, ultimoNumero: null, hayGanador: false, ganadorEn: null, mensaje: ''
+    });
+}
+</script>
+</body>
+</html>
